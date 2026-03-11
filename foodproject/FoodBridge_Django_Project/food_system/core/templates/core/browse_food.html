@@ -1,0 +1,58 @@
+{% extends 'core/base.html' %}
+{% block title %}Browse Food – FoodBridge{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>🍽️ Browse Available Food</h1>
+    <a href="{% url 'receiver_dashboard' %}" class="btn btn-outline">← Dashboard</a>
+</div>
+<!-- Filters -->
+<div class="card" style="margin-bottom:1.25rem;">
+    <form method="get" style="display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;">
+        <div class="form-group" style="margin-bottom:0;flex:1;min-width:150px;">
+            <label>Filter by City</label>
+            <input type="text" name="city" value="{{ city }}" placeholder="e.g. Chennai">
+        </div>
+        <div class="form-group" style="margin-bottom:0;flex:1;min-width:150px;">
+            <label>Food Type</label>
+            <select name="food_type">
+                <option value="">All Types</option>
+                {% for value, label in food_types %}
+                    <option value="{{ value }}" {% if food_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="{% url 'browse_food' %}" class="btn btn-outline">Clear</a>
+    </form>
+</div>
+
+{% if donations %}
+<div class="card-grid card-grid-3">
+{% for d in donations %}
+<div class="food-card">
+    <div class="food-card-img">🍱</div>
+    <div class="food-card-body">
+        <div class="food-card-title">{{ d.title }}</div>
+        <div class="food-card-meta">
+            🏪 {{ d.donor.profile.organization_name|default:d.donor.get_full_name }}<br>
+            📍 {{ d.city }} &nbsp;|&nbsp; 👥 {{ d.serves_people }} people<br>
+            🕐 Expires: {{ d.expiry_time|date:"d M, H:i" }}<br>
+            🍴 {{ d.get_food_type_display }}
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+            <a href="{% url 'request_food' d.pk %}" class="btn btn-primary btn-sm">Request Food</a>
+            <a href="{% url 'donation_detail' d.pk %}" class="btn btn-outline btn-sm">Details</a>
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <div class="empty-icon">🍽️</div>
+        <p>No food available with those filters. Try different criteria.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

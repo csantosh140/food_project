@@ -1,0 +1,49 @@
+{% extends 'core/base.html' %}
+{% block title %}Available Donations – FoodBridge{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>🍱 Available Donations</h1>
+    <a href="{% url 'delivery_dashboard' %}" class="btn btn-outline">← Dashboard</a>
+</div>
+<div class="card" style="margin-bottom:1.25rem;">
+    <form method="get" style="display:flex;gap:1rem;align-items:flex-end;">
+        <div class="form-group" style="margin-bottom:0;flex:1;">
+            <label>Filter by City</label>
+            <input type="text" name="city" value="{{ city_filter }}" placeholder="Enter city name">
+        </div>
+        <button type="submit" class="btn btn-orange">Filter</button>
+        <a href="{% url 'available_donations' %}" class="btn btn-outline">Clear</a>
+    </form>
+</div>
+
+{% if donations %}
+<div class="card-grid card-grid-3">
+{% for d in donations %}
+<div class="food-card">
+    <div class="food-card-img">🍱</div>
+    <div class="food-card-body">
+        <div class="food-card-title">{{ d.title }}</div>
+        <div class="food-card-meta">
+            🏪 {{ d.donor.profile.organization_name|default:d.donor.get_full_name }}<br>
+            📍 {{ d.pickup_address }}, {{ d.city }}<br>
+            👥 {{ d.serves_people }} people &nbsp;|&nbsp; {{ d.get_food_type_display }}<br>
+            🕐 Expires: {{ d.expiry_time|date:"d M Y, H:i" }}<br>
+            📞 {{ d.donor.profile.phone }}
+        </div>
+        <div style="display:flex;gap:0.5rem;">
+            <a href="{% url 'accept_delivery' d.pk %}" class="btn btn-orange btn-sm">Accept Delivery</a>
+            <a href="{% url 'donation_detail' d.pk %}" class="btn btn-outline btn-sm">Details</a>
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        <p>No donations available for delivery right now.</p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

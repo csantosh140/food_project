@@ -1,0 +1,46 @@
+{% extends 'core/base.html' %}
+{% block title %}My Donations – FoodBridge{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>🍱 My Donations</h1>
+    <a href="{% url 'add_donation' %}" class="btn btn-primary">+ New Donation</a>
+</div>
+<div class="card">
+    {% if donations %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Title</th><th>Type</th><th>Qty</th><th>Serves</th><th>Expiry</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+            {% for d in donations %}
+            <tr>
+                <td><strong>{{ d.title }}</strong></td>
+                <td>{{ d.get_food_type_display }}</td>
+                <td>{{ d.quantity }}</td>
+                <td>{{ d.serves_people }}</td>
+                <td>{{ d.expiry_time|date:"d M, H:i" }}</td>
+                <td><span class="badge badge-{{ d.status }}">{{ d.get_status_display }}</span></td>
+                <td>
+                    <a href="{% url 'donation_detail' d.pk %}" class="btn btn-outline btn-sm">View</a>
+                    {% if d.status == 'assigned' or d.status == 'in_transit' %}
+                        {% if d.delivery_request %}
+                        <a href="{% url 'tracker_delivery' d.delivery_request.pk %}" class="btn btn-success btn-sm">📍 Track</a>
+                        {% endif %}
+                    {% endif %}
+                    {% if d.status == 'available' %}
+                        <a href="{% url 'cancel_donation' d.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Cancel this donation?')">Cancel</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">🍱</div>
+        <p>No donations yet.</p>
+        <br><a href="{% url 'add_donation' %}" class="btn btn-primary">Add First Donation</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

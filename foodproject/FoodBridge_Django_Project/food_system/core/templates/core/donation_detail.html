@@ -1,0 +1,77 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ donation.title }} – FoodBridge{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>🍱 {{ donation.title }}</h1>
+    <a href="javascript:history.back()" class="btn btn-outline">← Back</a>
+</div>
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;">
+    <div>
+        <div class="card" style="margin-bottom:1.25rem;">
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;">
+                <span class="badge badge-{{ donation.status }}" style="font-size:0.9rem;padding:0.4rem 1rem;">{{ donation.get_status_display }}</span>
+                <span style="color:var(--gray);font-size:0.88rem;">{{ donation.get_food_type_display }}</span>
+            </div>
+            <p style="margin-bottom:1rem;line-height:1.6;">{{ donation.description }}</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;font-size:0.9rem;">
+                <div><strong>Quantity:</strong> {{ donation.quantity }}</div>
+                <div><strong>Serves:</strong> {{ donation.serves_people }} people</div>
+                <div><strong>Expires:</strong> {{ donation.expiry_time|date:"d M Y, H:i" }}</div>
+                <div><strong>City:</strong> {{ donation.city }}</div>
+                <div><strong>Pincode:</strong> {{ donation.pincode }}</div>
+                <div><strong>Posted:</strong> {{ donation.created_at|date:"d M Y" }}</div>
+            </div>
+            <hr style="margin:1rem 0;border:none;border-top:1px solid #eef4f0;">
+            <div><strong>Pickup Address:</strong><br>{{ donation.pickup_address }}</div>
+        </div>
+
+        <!-- Delivery Info -->
+        {% if delivery_req %}
+        <div class="card" style="margin-bottom:1.25rem;">
+            <div class="section-title">🚚 Delivery Info</div>
+            <div style="font-size:0.9rem;">
+                <p><strong>Agent:</strong> {{ delivery_req.delivery_agent.get_full_name }}</p>
+                <p><strong>Phone:</strong> {{ delivery_req.delivery_agent.profile.phone }}</p>
+                <p><strong>Status:</strong> <span class="badge badge-{{ delivery_req.status }}">{{ delivery_req.get_status_display }}</span></p>
+                {% if delivery_req.status == 'accepted' or delivery_req.status == 'picked_up' %}
+                    <a href="{% url 'tracker_delivery' delivery_req.pk %}" class="btn btn-success" style="margin-top:0.5rem;">📍 Track Live Location</a>
+                {% endif %}
+                {% if delivery_req.delivered_at %}<p><strong>Delivered at:</strong> {{ delivery_req.delivered_at|date:"d M Y, H:i" }}</p>{% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Feedback -->
+        {% if feedbacks %}
+        <div class="card">
+            <div class="section-title">⭐ Feedback</div>
+            {% for fb in feedbacks %}
+            <div style="border-bottom:1px solid #eef4f0;padding:0.75rem 0;">
+                <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.3rem;">
+                    <strong>{{ fb.from_user.get_full_name }}</strong>
+                    <span style="color:#f4845f;">{'★' * fb.rating}</span>
+                </div>
+                <p style="font-size:0.88rem;color:var(--gray);">{{ fb.comment }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div>
+        <div class="card">
+            <div class="section-title">🏪 Donor Info</div>
+            <div style="font-size:0.9rem;line-height:2;">
+                <p><strong>{{ donation.donor.profile.organization_name|default:donation.donor.get_full_name }}</strong></p>
+                <p>📞 {{ donation.donor.profile.phone }}</p>
+                <p>📍 {{ donation.donor.profile.city }}</p>
+            </div>
+        </div>
+        {% if user.is_authenticated and user.profile.role == 'receiver' and donation.status == 'delivered' and donation.receiver == user %}
+        <div class="card" style="margin-top:1.25rem;">
+            <a href="{% url 'give_feedback' donation.pk %}" class="btn btn-primary" style="width:100%;justify-content:center;">⭐ Give Feedback</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

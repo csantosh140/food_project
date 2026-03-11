@@ -1,0 +1,749 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FoodBridge — Live Delivery Tracker</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green: #2ECC71;
+      --green-d: #1aab58;
+      --orange: #FF6B35;
+      --bg: #0D1117;
+      --surface: #161B22;
+      --card: #1C2330;
+      --border: #2A3441;
+      --text: #E8EDF3;
+      --muted: #6B7D8F;
+      --radius: 14px;
+      --font-h: 'Syne', sans-serif;
+      --font-b: 'DM Sans', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-b);
+      overflow: hidden;
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: 60px 1fr;
+      grid-template-columns: 320px 1fr;
+      height: 100vh;
+      gap: 0;
+    }
+
+    .topbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+    }
+
+    .logo {
+      font-family: var(--font-h);
+      font-weight: 800;
+      font-size: 1.15rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--green), #27ae60);
+      border-radius: 8px;
+      display: grid; place-items: center;
+      font-size: 16px;
+    }
+
+    .topbar-right {
+      display: flex; align-items: center; gap: 16px;
+    }
+
+    .live-badge {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(46,204,113,0.12);
+      border: 1px solid rgba(46,204,113,0.3);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--green);
+    }
+
+    .live-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse-dot 1.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    .back-btn, .track-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 14px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .back-btn:hover, .track-btn:hover { background: var(--border); }
+    
+    .track-btn {
+      background: var(--green);
+      border-color: var(--green);
+      color: white;
+    }
+
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .status-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .status-card h3 {
+      font-family: var(--font-h);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .stepper { display: flex; flex-direction: column; gap: 0; }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      position: relative;
+      padding-bottom: 18px;
+    }
+
+    .step:last-child { padding-bottom: 0; }
+
+    .step-line {
+      position: absolute;
+      left: 13px; top: 28px;
+      width: 2px;
+      height: calc(100% - 10px);
+      background: var(--border);
+    }
+
+    .step:last-child .step-line { display: none; }
+
+    .step-dot {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      display: grid; place-items: center;
+      font-size: 13px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step.done .step-dot { background: var(--green); border-color: var(--green); }
+    .step.done .step-line { background: var(--green); }
+    .step.active .step-dot { background: var(--orange); border-color: var(--orange); }
+
+    .step-text { padding-top: 3px; }
+
+    .step-label {
+      font-family: var(--font-h);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .step.done .step-label, .step.active .step-label { color: var(--text); }
+
+    .step-sub { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .info-cell {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .info-label {
+      font-size: 0.67rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      font-family: var(--font-h);
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .info-value {
+      font-family: var(--font-h);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .info-value.green { color: var(--green); }
+    .info-value.orange { color: var(--orange); }
+
+    .coord-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .coord-card h3 {
+      font-family: var(--font-h);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .coord-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+    }
+
+    .coord-row:last-child { border-bottom: none; }
+    .coord-key { color: var(--muted); }
+    .coord-val { color: var(--green); font-family: monospace; }
+
+    .map-container {
+      position: relative;
+      background: var(--card);
+      border-radius: 0 14px 14px 0;
+      overflow: hidden;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-info {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      z-index: 1000;
+    }
+
+    .map-info b { color: var(--text); }
+
+    .donation-info {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .donation-info h3 {
+      font-family: var(--font-h);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .donation-info p {
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+    }
+
+    .donation-info .food-title {
+      font-family: var(--font-h);
+      font-weight: 700;
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    /* Location sharing panel for delivery agents */
+    .location-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .location-panel h3 {
+      font-family: var(--font-h);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .location-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
+    }
+
+    .location-status.active {
+      color: var(--green);
+    }
+
+    .location-status.inactive {
+      color: var(--muted);
+    }
+
+    .share-btn {
+      width: 100%;
+      background: var(--green);
+      border: none;
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .share-btn:hover {
+      background: var(--green-d);
+    }
+
+    .share-btn:disabled {
+      background: var(--muted);
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 768px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: 60px auto 1fr;
+        overflow: auto;
+      }
+      .sidebar { max-height: 40vh; }
+      body, html { overflow: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="logo">
+      <div class="logo-icon">🌿</div>
+      FoodBridge <span style="color:var(--muted);font-weight:400;font-size:0.85rem;margin-left:4px">/ Live Tracker</span>
+    </div>
+    <div class="topbar-right">
+      <a href="javascript:history.back()" class="back-btn">← Back</a>
+      <span class="live-badge"><span class="live-dot"></span> LIVE</span>
+    </div>
+  </header>
+
+  <aside class="sidebar">
+
+    <!-- Donation Info -->
+    <div class="donation-info">
+      <h3>📦 Delivery Info</h3>
+      {% if donation %}
+        <p class="food-title">{{ donation.title }}</p>
+        <p>📍 {{ donation.pickup_address|truncatechars:50 }}</p>
+        <p>🏙️ {{ donation.city }}</p>
+        {% if donation.receiver %}
+        <p>🎯 Delivery to: {{ donation.receiver.get_full_name|default:donation.receiver.username }}</p>
+        {% endif %}
+      {% else %}
+        <p class="food-title">No Delivery Selected</p>
+        <p>Select a delivery from your dashboard to track.</p>
+      {% endif %}
+    </div>
+
+    <!-- Status Stepper -->
+    <div class="status-card">
+      <h3>Delivery Status</h3>
+      <div class="stepper">
+        <div class="step {% if delivery and delivery.status != 'pending' %}done{% endif %}" id="step-0">
+          <div class="step-dot">✓</div>
+          <div class="step-line"></div>
+          <div class="step-text">
+            <div class="step-label">Order Confirmed</div>
+            <div class="step-sub">Food pickup scheduled</div>
+          </div>
+        </div>
+        <div class="step {% if delivery and delivery.status == 'accepted' %}active{% elif delivery and delivery.status == 'picked_up' or delivery.status == 'delivered' %}done{% endif %}" id="step-1">
+          <div class="step-dot">🚴</div>
+          <div class="step-line"></div>
+          <div class="step-text">
+            <div class="step-label" id="status-label">
+              {% if delivery and delivery.status == 'accepted' %}Collecting Food
+              {% elif delivery and delivery.status == 'picked_up' %}Collected
+              {% else %}Pending{% endif %}
+            </div>
+            <div class="step-sub" id="status-sub">
+              {% if delivery and delivery.status == 'accepted' %}En route to pickup
+              {% elif delivery and delivery.status == 'picked_up' %}Food collected
+              {% else %}Waiting for acceptance{% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="step {% if delivery and delivery.status == 'picked_up' %}active{% elif delivery and delivery.status == 'delivered' %}done{% endif %}" id="step-2">
+          <div class="step-dot">📦</div>
+          <div class="step-line"></div>
+          <div class="step-text">
+            <div class="step-label">In Transit</div>
+            <div class="step-sub">Heading to destination</div>
+          </div>
+        </div>
+        <div class="step {% if delivery and delivery.status == 'delivered' %}done active{% endif %}" id="step-3">
+          <div class="step-dot">🏠</div>
+          <div class="step-line"></div>
+          <div class="step-text">
+            <div class="step-label">Delivered</div>
+            <div class="step-sub">{% if delivery and delivery.status == 'delivered' %}Food delivered ✅{% else %}Pending{% endif %}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="info-grid">
+      <div class="info-cell">
+        <div class="info-label">Distance</div>
+        <div class="info-value green" id="stat-dist">-- km</div>
+      </div>
+      <div class="info-cell">
+        <div class="info-label">ETA</div>
+        <div class="info-value orange" id="stat-eta">-- min</div>
+      </div>
+      <div class="info-cell">
+        <div class="info-label">Speed</div>
+        <div class="info-value" id="stat-speed">-- km/h</div>
+      </div>
+      <div class="info-cell">
+        <div class="info-label">Food Saved</div>
+        <div class="info-value green">{{ donation.serves_people|default:"--" }} ppl</div>
+      </div>
+    </div>
+
+    <!-- Coordinates -->
+    <div class="coord-card">
+      <h3>Live Coordinates</h3>
+      <div class="coord-row">
+        <span class="coord-key">Latitude</span>
+        <span class="coord-val" id="coord-lat">--</span>
+      </div>
+      <div class="coord-row">
+        <span class="coord-key">Longitude</span>
+        <span class="coord-val" id="coord-lng">--</span>
+      </div>
+      <div class="coord-row">
+        <span class="coord-key">Last Update</span>
+        <span class="coord-val" id="coord-time">--</span>
+      </div>
+    </div>
+
+    <!-- Location sharing panel for delivery agents -->
+    {% if can_update_location %}
+    <div class="location-panel">
+      <h3>📍 Share Your Location</h3>
+      <div class="location-status inactive" id="location-status">
+        <span id="location-status-text">Click to start sharing</span>
+      </div>
+      <button class="share-btn" id="share-location-btn" onclick="toggleLocationSharing()">
+        Start Sharing Location
+      </button>
+    </div>
+    {% endif %}
+
+  </aside>
+
+  <div class="map-container">
+    <div id="map"></div>
+    <div class="map-info">
+      <b>🗺️ FoodBridge Live Map</b><br/>
+      📍 Tracking delivery in real-time
+    </div>
+  </div>
+
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+  // Initialize map with default location (Mumbai)
+  const defaultLat = {{ delivery.current_latitude|default:"19.0760" }};
+  const defaultLng = {{ delivery.current_longitude|default:"72.8777" }};
+  
+  const map = L.map('map').setView([defaultLat, defaultLng], 14);
+  
+  // Add OpenStreetMap tile layer (free, no API key needed)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19,
+  }).addTo(map);
+
+  // Custom delivery icon
+  const deliveryIcon = L.divIcon({
+    className: 'delivery-marker',
+    html: '<div style="background: #FF6B35; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; display: flex; align-items: center; justify-content: center; font-size: 14px;">🚴</div>',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15]
+  });
+
+  // Marker for delivery location
+  let deliveryMarker = L.marker([defaultLat, defaultLng], {icon: deliveryIcon}).addTo(map);
+  
+  // Get delivery ID from context or URL
+  const deliveryId = {{ delivery.id|default:"null" }};
+  const canUpdate = {{ can_update_location|yesno:"true,false" }};
+  const userRole = "{{ user_role|default:'' }}";
+  
+  let locationSharing = false;
+  let locationWatchId = null;
+
+  // Function to fetch location from API
+  async function fetchLocation() {
+    try {
+      let url = '/api/location/';
+      if (deliveryId) {
+        url += `?delivery_id=${deliveryId}`;
+      }
+      
+      const response = await fetch(url, {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        updateLocationDisplay(data);
+        
+        // Update map marker
+        if (data.lat && data.lng) {
+          deliveryMarker.setLatLng([data.lat, data.lng]);
+          map.setView([data.lat, data.lng], 14);
+          
+          // Update coordinates display
+          document.getElementById('coord-lat').textContent = data.lat.toFixed(4);
+          document.getElementById('coord-lng').textContent = data.lng.toFixed(4);
+          document.getElementById('coord-time').textContent = 'Just now';
+          
+          // Update status if available
+          if (data.status) {
+            updateStatusDisplay(data.status);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching location:', error);
+    }
+  }
+
+  // Function to update location display
+  function updateLocationDisplay(data) {
+    // Calculate fake distance and ETA for demo
+    const baseLat = 19.0760;
+    const baseLng = 72.8777;
+    const distance = Math.sqrt(Math.pow(data.lat - baseLat, 2) + Math.pow(data.lng - baseLng, 2)) * 111; // rough km
+    const eta = Math.max(1, Math.round(distance * 3));
+    
+    document.getElementById('stat-dist').textContent = distance.toFixed(1) + ' km';
+    document.getElementById('stat-eta').textContent = eta + ' min';
+    document.getElementById('stat-speed').textContent = (20 + Math.random() * 20).toFixed(0) + ' km/h';
+  }
+
+  // Function to update status display
+  function updateStatusDisplay(status) {
+    const statusLabel = document.getElementById('status-label');
+    const statusSub = document.getElementById('status-sub');
+    
+    if (status === 'accepted') {
+      statusLabel.textContent = 'Collecting Food';
+      statusSub.textContent = 'En route to pickup';
+    } else if (status === 'picked_up') {
+      statusLabel.textContent = 'In Transit';
+      statusSub.textContent = 'Delivering to destination';
+    } else if (status === 'delivered') {
+      statusLabel.textContent = 'Delivered';
+      statusSub.textContent = 'Food delivered ✅';
+    }
+  }
+
+  // Function to send location update to server (for delivery agents)
+  async function sendLocationUpdate(lat, lng) {
+    try {
+      const response = await fetch('/api/location/update/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+          lat: lat,
+          lng: lng,
+          delivery_id: deliveryId
+        })
+      });
+      
+      const data = await response.json();
+      if (data.ok) {
+        console.log('Location updated successfully');
+        // Update local display
+        deliveryMarker.setLatLng([lat, lng]);
+        map.setView([lat, lng], 14);
+        document.getElementById('coord-lat').textContent = lat.toFixed(4);
+        document.getElementById('coord-lng').textContent = lng.toFixed(4);
+        document.getElementById('coord-time').textContent = 'Just now';
+      }
+    } catch (error) {
+      console.error('Error updating location:', error);
+    }
+  }
+
+  // Toggle location sharing for delivery agents
+  function toggleLocationSharing() {
+    const btn = document.getElementById('share-location-btn');
+    const statusDiv = document.getElementById('location-status');
+    const statusText = document.getElementById('location-status-text');
+    
+    if (!locationSharing) {
+      // Start location sharing
+      if ('geolocation' in navigator) {
+        locationWatchId = navigator.geolocation.watchPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            sendLocationUpdate(lat, lng);
+          },
+          (error) => {
+            console.error('Geolocation error:', error);
+            alert('Error getting location: ' + error.message);
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 10000,
+            timeout: 5000
+          }
+        );
+        
+        locationSharing = true;
+        btn.textContent = 'Stop Sharing Location';
+        btn.style.background = '#FF6B35';
+        statusDiv.className = 'location-status active';
+        statusText.textContent = '● Sharing location...';
+      } else {
+        alert('Geolocation is not supported by your browser');
+      }
+    } else {
+      // Stop location sharing
+      if (locationWatchId !== null) {
+        navigator.geolocation.clearWatch(locationWatchId);
+        locationWatchId = null;
+      }
+      locationSharing = false;
+      btn.textContent = 'Start Sharing Location';
+      btn.style.background = '';
+      statusDiv.className = 'location-status inactive';
+      statusText.textContent = 'Click to start sharing';
+    }
+  }
+
+  // Get CSRF token
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  // Initial fetch
+  fetchLocation();
+
+  // Auto-refresh location every 3 seconds
+  setInterval(fetchLocation, 3000);
+
+  // Initial display update
+  if (deliveryId) {
+    fetchLocation();
+  } else {
+    // Show default values if no delivery
+    document.getElementById('coord-lat').textContent = '19.0760';
+    document.getElementById('coord-lng').textContent = '72.8777';
+    document.getElementById('stat-dist').textContent = '-- km';
+    document.getElementById('stat-eta').textContent = '-- min';
+  }
+</script>
+
+</body>
+</html>
+

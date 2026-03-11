@@ -1,0 +1,50 @@
+{% extends 'core/base.html' %}
+{% block title %}My Deliveries – FoodBridge{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>📦 My Deliveries</h1>
+    <a href="{% url 'delivery_dashboard' %}" class="btn btn-outline">← Dashboard</a>
+</div>
+<div class="card">
+    {% if deliveries %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Food</th><th>Donor</th><th>City</th><th>Accepted</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+            {% for dr in deliveries %}
+            <tr>
+                <td><strong>{{ dr.donation.title }}</strong></td>
+                <td>{{ dr.donation.donor.profile.organization_name|default:dr.donation.donor.get_full_name }}</td>
+                <td>{{ dr.donation.city }}</td>
+                <td>{{ dr.accepted_at|date:"d M Y" }}</td>
+                <td><span class="badge badge-{{ dr.status }}">{{ dr.get_status_display }}</span></td>
+                <td>
+                    <a href="{% url 'donation_detail' dr.donation.pk %}" class="btn btn-outline btn-sm">View</a>
+                    {% if dr.status == 'accepted' or dr.status == 'picked_up' %}
+                        <a href="{% url 'tracker_delivery' dr.pk %}" class="btn btn-success btn-sm">📍 Track</a>
+                    {% endif %}
+                    {% if dr.status == 'accepted' %}
+                        <form method="post" action="{% url 'update_delivery_status' dr.pk %}" style="display:inline;">
+                            {% csrf_token %}<input type="hidden" name="status" value="picked_up">
+                            <button class="btn btn-orange btn-sm">Picked Up</button>
+                        </form>
+                    {% elif dr.status == 'picked_up' %}
+                        <form method="post" action="{% url 'update_delivery_status' dr.pk %}" style="display:inline;">
+                            {% csrf_token %}<input type="hidden" name="status" value="delivered">
+                            <button class="btn btn-primary btn-sm">Delivered</button>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon">📦</div>
+        <p>No deliveries yet. Accept a delivery to get started!</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

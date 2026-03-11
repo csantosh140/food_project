@@ -1,0 +1,61 @@
+{% extends 'core/base.html' %}
+{% block title %}My Profile – FoodBridge{% endblock %}
+{% block content %}
+<div style="max-width:640px;margin:0 auto;">
+    <div class="page-header">
+        <h1>👤 My Profile</h1>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline">← Dashboard</a>
+    </div>
+    <div class="card" style="margin-bottom:1.25rem;">
+        <div style="display:flex;align-items:center;gap:1.5rem;margin-bottom:1.5rem;">
+            <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--green-pale),var(--orange-light));display:flex;align-items:center;justify-content:center;font-size:2rem;">
+                {% if user.profile.role == 'donor' %}🏪{% elif user.profile.role == 'delivery' %}🚚{% else %}🤲{% endif %}
+            </div>
+            <div>
+                <h2 style="font-family:'Syne',sans-serif;font-weight:800;">{{ user.get_full_name|default:user.username }}</h2>
+                <p style="color:var(--gray);">{{ user.email }}</p>
+                <span class="nav-role-badge" style="background:var(--green-light);">{{ user.profile.get_role_display }}</span>
+            </div>
+        </div>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Phone</label>
+                {{ form.phone }}
+            </div>
+            <div class="form-group">
+                <label>Address</label>
+                {{ form.address }}
+            </div>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>City</label>
+                    {{ form.city }}
+                </div>
+                <div class="form-group">
+                    <label>Pincode</label>
+                    {{ form.pincode }}
+                </div>
+            </div>
+            {% if user.profile.role == 'donor' %}
+            <div class="form-group">
+                <label>Organization Name</label>
+                {{ form.organization_name }}
+            </div>
+            {% endif %}
+            {% if user.profile.role == 'delivery' %}
+            <div class="form-group">
+                <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+                    {{ form.is_available }} &nbsp; Available for Deliveries
+                </label>
+            </div>
+            {% endif %}
+            <div class="form-group">
+                <label>Profile Picture</label>
+                {{ form.profile_pic }}
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Update Profile</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
