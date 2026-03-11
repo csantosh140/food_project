@@ -1,0 +1,198 @@
+{% extends 'core/base.html' %}
+{% block title %}FoodBridge – Reduce Waste, Feed Hope{% endblock %}
+
+{% block extra_css %}
+<style>
+.hero {
+    background: linear-gradient(135deg, var(--dark) 0%, var(--green) 100%);
+    border-radius: 24px;
+    padding: 4rem 3rem;
+    color: #fff;
+    margin-bottom: 2.5rem;
+    position: relative;
+    overflow: hidden;
+}
+.hero::before {
+    content: '🌿';
+    position: absolute;
+    font-size: 12rem;
+    right: -1rem;
+    top: -2rem;
+    opacity: 0.08;
+}
+.hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+}
+.hero h1 span { color: var(--orange-light); }
+.hero p { font-size: 1.1rem; opacity: 0.85; max-width: 540px; margin-bottom: 2rem; line-height: 1.6; }
+.hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; }
+.hero-btns a {
+    padding: 0.8rem 2rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    font-family: 'Syne', sans-serif;
+    transition: all 0.2s;
+}
+.hero-btns a.primary { background: var(--orange); color: #fff; }
+.hero-btns a.primary:hover { background: #e06b48; transform: translateY(-2px); }
+.hero-btns a.secondary { background: rgba(255,255,255,0.15); color: #fff; border: 2px solid rgba(255,255,255,0.3); }
+.hero-btns a.secondary:hover { background: rgba(255,255,255,0.25); }
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-bottom: 2.5rem; }
+.how-it-works { background: var(--white); border-radius: 24px; padding: 2.5rem; margin-bottom: 2rem; box-shadow: var(--shadow); }
+.how-it-works h2 { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; text-align: center; margin-bottom: 2rem; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.step { text-align: center; padding: 1.5rem; border-radius: 16px; background: #f5f9f7; }
+.step-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.step h3 { font-family: 'Syne', sans-serif; font-weight: 700; margin-bottom: 0.5rem; }
+.step p { font-size: 0.875rem; color: var(--gray); line-height: 1.5; }
+.entities { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
+.entity-card {
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+.entity-card.donor { background: linear-gradient(135deg, #2d6a4f, #40916c); }
+.entity-card.delivery { background: linear-gradient(135deg, #e76f51, #f4a261); }
+.entity-card.receiver { background: linear-gradient(135deg, #457b9d, #1d3557); }
+.entity-card .entity-icon { font-size: 3rem; margin-bottom: 1rem; }
+.entity-card h3 { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem; }
+.entity-card p { font-size: 0.875rem; opacity: 0.9; margin-bottom: 1.25rem; line-height: 1.5; }
+.entity-card a {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    text-decoration: none;
+    padding: 0.55rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+.entity-card a:hover { background: rgba(255,255,255,0.35); }
+@media (max-width: 768px) {
+    .hero h1 { font-size: 2rem; }
+    .stats-row, .steps, .entities { grid-template-columns: 1fr 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>Reduce Food Waste,<br><span>Feed Those in Need</span></h1>
+    <p>FoodBridge connects restaurants, hotels, and households with people who need food — through a seamless network of donors, delivery agents, and receivers.</p>
+    <div class="hero-btns">
+        <a href="{% url 'register' %}" class="primary">Join FoodBridge →</a>
+        <a href="{% url 'login' %}" class="secondary">Already a member</a>
+    </div>
+</div>
+
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon">🍱</div>
+        <div class="stat-num">{{ stats.total_donations }}</div>
+        <div class="stat-label">Total Donations</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-num">{{ stats.delivered }}</div>
+        <div class="stat-label">Successfully Delivered</div>
+    </div>
+    <div class="stat-card orange">
+        <div class="stat-icon">🏪</div>
+        <div class="stat-num">{{ stats.donors }}</div>
+        <div class="stat-label">Food Donors</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🤝</div>
+        <div class="stat-num">{{ stats.receivers }}</div>
+        <div class="stat-label">People Helped</div>
+    </div>
+</div>
+
+<div class="entities">
+    <div class="entity-card donor">
+        <div class="entity-icon">🏪</div>
+        <h3>Food Donor</h3>
+        <p>Restaurants, hotels, malls, and households can donate their surplus food and help reduce waste.</p>
+        <a href="{% url 'register' %}">Donate Food</a>
+    </div>
+    <div class="entity-card delivery">
+        <div class="entity-icon">🚚</div>
+        <h3>Delivery Agent</h3>
+        <p>Volunteers and delivery partners who pick up food from donors and deliver it to those who need it.</p>
+        <a href="{% url 'register' %}">Deliver Food</a>
+    </div>
+    <div class="entity-card receiver">
+        <div class="entity-icon">🤲</div>
+        <h3>Receiver</h3>
+        <p>Individuals, NGOs, and shelters who request and receive donated food from our network.</p>
+        <a href="{% url 'register' %}">Request Food</a>
+    </div>
+</div>
+
+<div class="how-it-works">
+    <h2>How FoodBridge Works</h2>
+    <div class="steps">
+        <div class="step">
+            <div class="step-icon">📋</div>
+            <h3>1. List Surplus Food</h3>
+            <p>Donors post their available food with quantity, type, and pickup details on the platform.</p>
+        </div>
+        <div class="step">
+            <div class="step-icon">🚀</div>
+            <h3>2. Delivery Agent Picks Up</h3>
+            <p>A nearby delivery agent accepts the task and collects the food from the donor's location.</p>
+        </div>
+        <div class="step">
+            <div class="step-icon">🍽️</div>
+            <h3>3. Food Reaches the Needy</h3>
+            <p>The food is delivered to the receiver, reducing waste and feeding those in need.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Live Map Section -->
+<div class="how-it-works" style="margin-bottom: 2rem;">
+    <h2>🗺️ Live Food Tracking</h2>
+    <p style="text-align: center; color: var(--gray); margin-bottom: 1.5rem;">Track your donated food in real-time. See exactly where your food is during delivery.</p>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start;">
+        <div>
+            <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3771.635736367585!2d72.8478!3d19.033!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTHCsDAyJzAuMDUiTiA3MsKwNTEnNC42Ilc!5e0!3m2!1sen!2sin!4v1234567890"
+                width="100%" 
+                height="350" 
+                style="border:0; border-radius: 14px;" 
+                loading="lazy">
+            </iframe>
+        </div>
+        <div>
+            <div style="background: #f5f9f7; border-radius: 14px; padding: 1.5rem;">
+                <h4 style="font-family: 'Syne', sans-serif; font-weight: 700; margin-bottom: 1rem;">📍 Track Your Donation</h4>
+                <ul style="list-style: none; padding: 0;">
+                    <li style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: var(--green);">✓</span> Real-time GPS tracking of delivery
+                    </li>
+                    <li style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: var(--green);">✓</span> Live status updates
+                    </li>
+                    <li style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: var(--green);">✓</span> Estimated delivery time
+                    </li>
+                    <li style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: var(--green);">✓</span> Know exactly when food arrives
+                    </li>
+                </ul>
+                <a href="{% url 'tracker' %}" class="btn btn-primary" style="display: block; text-align: center; margin-top: 1rem; text-decoration: none;">🌐 Open Live Tracker</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

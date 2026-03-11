@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FoodBridge – Food Conservation System{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --green: #2d6a4f;
+            --green-light: #40916c;
+            --green-pale: #d8f3dc;
+            --orange: #f4845f;
+            --orange-light: #f9c784;
+            --cream: #fefae0;
+            --dark: #1b2d27;
+            --gray: #6b7b74;
+            --white: #ffffff;
+            --shadow: 0 4px 24px rgba(45,106,79,0.10);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #f5f9f7;
+            color: var(--dark);
+            min-height: 100vh;
+        }
+        /* NAV */
+        nav {
+            background: var(--dark);
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.18);
+        }
+        .nav-brand {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--green-pale);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .nav-brand span { color: var(--orange); }
+        .nav-links { display: flex; align-items: center; gap: 0.5rem; }
+        .nav-links a {
+            color: rgba(255,255,255,0.75);
+            text-decoration: none;
+            padding: 0.4rem 0.9rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .nav-links a.btn-nav {
+            background: var(--green-light);
+            color: #fff;
+        }
+        .nav-links a.btn-nav:hover { background: var(--green); }
+        .nav-role-badge {
+            background: var(--orange);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        /* MAIN */
+        main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+        /* CARDS */
+        .card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+        .card-grid {
+            display: grid;
+            gap: 1.25rem;
+        }
+        .card-grid-4 { grid-template-columns: repeat(4, 1fr); }
+        .card-grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .card-grid-2 { grid-template-columns: repeat(2, 1fr); }
+        /* STAT CARDS */
+        .stat-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            border-left: 4px solid var(--green-light);
+        }
+        .stat-card .stat-icon { font-size: 2rem; }
+        .stat-card .stat-num {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--green);
+        }
+        .stat-card .stat-label { font-size: 0.85rem; color: var(--gray); font-weight: 500; }
+        .stat-card.orange { border-left-color: var(--orange); }
+        .stat-card.orange .stat-num { color: var(--orange); }
+        /* BUTTONS */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.55rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .btn-primary { background: var(--green-light); color: #fff; }
+        .btn-primary:hover { background: var(--green); transform: translateY(-1px); }
+        .btn-orange { background: var(--orange); color: #fff; }
+        .btn-orange:hover { background: #e06b48; transform: translateY(-1px); }
+        .btn-outline { background: transparent; border: 2px solid var(--green-light); color: var(--green-light); }
+        .btn-outline:hover { background: var(--green-pale); }
+        .btn-danger { background: #e74c3c; color: #fff; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.8rem; }
+        /* FOOD CARD */
+        .food-card {
+            background: var(--white);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .food-card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(45,106,79,0.15); }
+        .food-card-img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            background: linear-gradient(135deg, var(--green-pale), var(--orange-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+        .food-card-body { padding: 1.2rem; }
+        .food-card-title {
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 0.3rem;
+        }
+        .food-card-meta { font-size: 0.8rem; color: var(--gray); margin-bottom: 0.8rem; }
+        /* BADGES */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.7rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-available { background: #d8f3dc; color: #2d6a4f; }
+        .badge-assigned { background: #fff3cd; color: #856404; }
+        .badge-in_transit { background: #cce5ff; color: #004085; }
+        .badge-delivered { background: #d4edda; color: #155724; }
+        .badge-expired { background: #f8d7da; color: #721c24; }
+        .badge-cancelled { background: #e2e3e5; color: #383d41; }
+        .badge-pending { background: #fff3cd; color: #856404; }
+        /* PAGE HEADER */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+        .page-header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+        /* MESSAGES */
+        .messages { list-style: none; margin-bottom: 1rem; }
+        .message {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .message.success { background: #d8f3dc; color: #2d6a4f; border-left: 4px solid var(--green-light); }
+        .message.error { background: #fde8e8; color: #c0392b; border-left: 4px solid #e74c3c; }
+        .message.info { background: #dbeafe; color: #1d4ed8; border-left: 4px solid #3b82f6; }
+        /* FORMS */
+        .form-group { margin-bottom: 1.1rem; }
+        .form-group label { display: block; font-weight: 600; font-size: 0.88rem; margin-bottom: 0.35rem; color: var(--dark); }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 0.6rem 0.9rem;
+            border: 2px solid #e8f0ec;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+            background: #fafffe;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--green-light);
+            background: #fff;
+        }
+        .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .errorlist { color: #e74c3c; font-size: 0.8rem; margin-top: 0.25rem; list-style: none; }
+        /* TABLE */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--dark); color: #fff; padding: 0.75rem 1rem; text-align: left; font-family: 'Syne', sans-serif; font-size: 0.85rem; }
+        td { padding: 0.75rem 1rem; border-bottom: 1px solid #eef4f0; font-size: 0.88rem; }
+        tr:hover td { background: #f5f9f7; }
+        /* NOTIFICATIONS */
+        .notif-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            background: var(--orange);
+            border-radius: 50%;
+            margin-left: 4px;
+        }
+        /* SECTION TITLE */
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--gray);
+        }
+        .empty-state .empty-icon { font-size: 3.5rem; margin-bottom: 0.75rem; }
+        .empty-state p { font-size: 0.95rem; }
+        /* FOOTER */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray);
+            font-size: 0.85rem;
+            border-top: 1px solid #e8f0ec;
+            margin-top: 3rem;
+        }
+        @media (max-width: 768px) {
+            .card-grid-4, .card-grid-3 { grid-template-columns: repeat(2, 1fr); }
+            .card-grid-2 { grid-template-columns: 1fr; }
+            .form-grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+<nav>
+    <a class="nav-brand" href="{% url 'home' %}">🌿 Food<span>Bridge</span></a>
+    <div class="nav-links">
+        <a href="{% url 'tracker' %}" style="color: #4ade80;">🗺️ Track</a>
+        {% if user.is_authenticated %}
+            <span class="nav-role-badge">{{ user.profile.role }}</span>
+            <a href="{% url 'dashboard' %}">Dashboard</a>
+            <a href="{% url 'profile' %}">Profile</a>
+            {% if user.notifications.filter.is_read == False %}
+            {% endif %}
+            <a href="{% url 'logout' %}" class="btn-nav">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}">Login</a>
+            <a href="{% url 'register' %}" class="btn-nav">Register</a>
+        {% endif %}
+    </div>
+</nav>
+
+<main>
+    {% if messages %}
+        <ul class="messages">
+            {% for msg in messages %}
+                <li class="message {{ msg.tags }}">{{ msg }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% block content %}{% endblock %}
+</main>
+
+<footer>
+    🌿 FoodBridge – Reducing Food Waste, Feeding Hope &nbsp;|&nbsp; Built with Django &amp; Python
+</footer>
+</body>
+</html>

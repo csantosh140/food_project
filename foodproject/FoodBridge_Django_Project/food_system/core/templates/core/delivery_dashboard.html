@@ -1,0 +1,163 @@
+{% extends 'core/base.html' %}
+{% block title %}Delivery Dashboard – FoodBridge{% endblock %}
+{% block extra_css %}
+<style>
+.dashboard-header {
+    background: linear-gradient(135deg, #e76f51, #f4a261);
+    color: #fff;
+    border-radius: 20px;
+    padding: 2rem 2.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.dashboard-header h1 { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; }
+.dashboard-header p { opacity: 0.85; font-size: 0.9rem; margin-top: 0.25rem; }
+.delivery-item {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.2rem;
+    border: 1px solid #eef4f0;
+    margin-bottom: 0.75rem;
+}
+.delivery-item h4 { font-family: 'Syne', sans-serif; font-weight: 700; margin-bottom: 0.3rem; }
+.delivery-meta { font-size: 0.82rem; color: var(--gray); margin-bottom: 0.75rem; }
+.status-actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.avail-food-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-top: 0.5rem; }
+.avail-food-item {
+    border: 1px solid #e8f0ec;
+    border-radius: 10px;
+    padding: 0.9rem;
+    transition: border-color 0.2s;
+}
+.avail-food-item:hover { border-color: var(--green-light); }
+.avail-food-item h5 { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.25rem; }
+.avail-food-item .meta { font-size: 0.78rem; color: var(--gray); margin-bottom: 0.6rem; }
+.notif-card { background: #fff8f3; border-left: 4px solid var(--orange); border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; font-size: 0.88rem; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <h1>🚚 Delivery Dashboard</h1>
+        <p>Welcome, {{ user.get_full_name|default:user.username }} — Ready to deliver?</p>
+    </div>
+    <div>
+        <a href="{% url 'available_donations' %}" class="btn" style="background:rgba(255,255,255,0.25);color:#fff;font-weight:700;">Browse All Available →</a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="card-grid card-grid-4" style="margin-bottom:1.5rem;">
+    <div class="stat-card orange">
+        <div class="stat-icon">📦</div>
+        <div class="stat-num">{{ stats.total }}</div>
+        <div class="stat-label">Total Deliveries</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-num">{{ stats.completed }}</div>
+        <div class="stat-label">Completed</div>
+    </div>
+    <div class="stat-card orange">
+        <div class="stat-icon">🔄</div>
+        <div class="stat-num">{{ stats.active }}</div>
+        <div class="stat-label">Active Now</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🍱</div>
+        <div class="stat-num">{{ stats.available_to_pick }}</div>
+        <div class="stat-label">Available to Pick</div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:3fr 2fr;gap:1.25rem;">
+    <div>
+        <!-- Active Deliveries -->
+        <div class="card" style="margin-bottom:1.25rem;">
+            <div class="section-title">🔄 Active Deliveries</div>
+            {% if active_deliveries %}
+                {% for dr in active_deliveries %}
+                <div class="delivery-item">
+                    <h4>{{ dr.donation.title }}</h4>
+                    <div class="delivery-meta">
+                        📍 {{ dr.donation.pickup_address }}, {{ dr.donation.city }} &nbsp;|&nbsp;
+                        👥 Serves {{ dr.donation.serves_people }} &nbsp;|&nbsp;
+                        <span class="badge badge-{{ dr.status }}">{{ dr.get_status_display }}</span>
+                    </div>
+                    <div class="status-actions">
+                        <a href="{% url 'tracker_delivery' dr.pk %}" class="btn btn-success btn-sm">📍 Track Location</a>
+                        {% if dr.status == 'accepted' %}
+                            <form method="post" action="{% url 'update_delivery_status' dr.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="picked_up">
+                                <button class="btn btn-orange btn-sm" type="submit">✅ Mark Picked Up</button>
+                            </form>
+                        {% elif dr.status == 'picked_up' %}
+                            <form method="post" action="{% url 'update_delivery_status' dr.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="status" value="delivered">
+                                <button class="btn btn-primary btn-sm" type="submit">🎉 Mark Delivered</button>
+                            </form>
+                        {% endif %}
+                        <a href="{% url 'donation_detail' dr.donation.pk %}" class="btn btn-outline btn-sm">Details</a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state" style="padding:1.5rem 0;">
+                    <div class="empty-icon" style="font-size:2rem;">🚚</div>
+                    <p>No active deliveries. Pick up a donation below!</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Available Donations -->
+        <div class="card">
+            <div class="section-title">🍱 Available to Deliver</div>
+            {% if available_donations %}
+                <div class="avail-food-grid">
+                {% for d in available_donations %}
+                <div class="avail-food-item">
+                    <h5>{{ d.title }}</h5>
+                    <div class="meta">📍 {{ d.city }} | 🕐 Expires: {{ d.expiry_time|date:"d M, H:i" }}</div>
+                    <div class="meta">👥 {{ d.serves_people }} people | {{ d.get_food_type_display }}</div>
+                    <a href="{% url 'accept_delivery' d.pk %}" class="btn btn-primary btn-sm">Accept Delivery</a>
+                </div>
+                {% endfor %}
+                </div>
+                <div style="text-align:right;margin-top:1rem;">
+                    <a href="{% url 'available_donations' %}" class="btn btn-outline btn-sm">View All →</a>
+                </div>
+            {% else %}
+                <div class="empty-state" style="padding:1.5rem 0;">
+                    <div class="empty-icon" style="font-size:2rem;">📭</div>
+                    <p>No food available for delivery right now.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div>
+        <!-- Notifications -->
+        <div class="card" style="margin-bottom:1.25rem;">
+            <div class="section-title">🔔 Notifications</div>
+            {% if notifications %}
+                {% for n in notifications %}
+                    <div class="notif-card">{{ n.message }}<br><small style="color:var(--gray)">{{ n.created_at|timesince }} ago</small></div>
+                {% endfor %}
+                <a href="{% url 'mark_notifications_read' %}" class="btn btn-outline btn-sm" style="margin-top:0.5rem;">Mark all read</a>
+            {% else %}
+                <div class="empty-state" style="padding:1rem 0;"><p>No new notifications</p></div>
+            {% endif %}
+        </div>
+
+        <!-- My History -->
+        <div class="card">
+            <div class="section-title">📋 My Delivery History</div>
+            <a href="{% url 'my_deliveries' %}" class="btn btn-primary btn-sm">View All Deliveries →</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

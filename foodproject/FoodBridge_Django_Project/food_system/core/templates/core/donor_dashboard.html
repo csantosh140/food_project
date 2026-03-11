@@ -1,0 +1,108 @@
+{% extends 'core/base.html' %}
+{% block title %}Donor Dashboard – FoodBridge{% endblock %}
+{% block extra_css %}
+<style>
+.dashboard-header {
+    background: linear-gradient(135deg, var(--dark), var(--green));
+    color: #fff;
+    border-radius: 20px;
+    padding: 2rem 2.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.dashboard-header h1 { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; }
+.dashboard-header p { opacity: 0.8; font-size: 0.9rem; margin-top: 0.25rem; }
+.quick-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.notif-card { background: #fffbf0; border-left: 4px solid var(--orange); border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; font-size: 0.88rem; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <h1>🏪 Donor Dashboard</h1>
+        <p>Welcome back, {{ user.get_full_name|default:user.username }} — {{ user.profile.organization_name }}</p>
+    </div>
+    <div class="quick-actions">
+        <a href="{% url 'add_donation' %}" class="btn btn-orange">+ New Donation</a>
+        <a href="{% url 'donor_donations' %}" class="btn btn-outline" style="color:#fff;border-color:rgba(255,255,255,0.4);">My Donations</a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="card-grid card-grid-4" style="margin-bottom:1.5rem;">
+    <div class="stat-card">
+        <div class="stat-icon">🍱</div>
+        <div class="stat-num">{{ stats.total }}</div>
+        <div class="stat-label">Total Donations</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📢</div>
+        <div class="stat-num">{{ stats.available }}</div>
+        <div class="stat-label">Available Now</div>
+    </div>
+    <div class="stat-card orange">
+        <div class="stat-icon">🚚</div>
+        <div class="stat-num">{{ stats.in_transit }}</div>
+        <div class="stat-label">In Transit</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🤝</div>
+        <div class="stat-num">{{ stats.total_served }}</div>
+        <div class="stat-label">People Served</div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.25rem;">
+    <!-- Recent Donations -->
+    <div class="card">
+        <div class="section-title">🍽️ Recent Donations</div>
+        {% if recent_donations %}
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Item</th><th>Type</th><th>Qty</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody>
+                    {% for d in recent_donations %}
+                    <tr>
+                        <td><strong>{{ d.title }}</strong><br><small style="color:var(--gray)">{{ d.created_at|date:"d M Y" }}</small></td>
+                        <td>{{ d.get_food_type_display }}</td>
+                        <td>{{ d.quantity }}</td>
+                        <td><span class="badge badge-{{ d.status }}">{{ d.get_status_display }}</span></td>
+                        <td><a href="{% url 'donation_detail' d.pk %}" class="btn btn-outline btn-sm">View</a></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div style="text-align:right;margin-top:1rem;">
+                <a href="{% url 'donor_donations' %}" class="btn btn-outline btn-sm">View All →</a>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🍱</div>
+                <p>No donations yet. Start by adding your first food donation!</p>
+                <br><a href="{% url 'add_donation' %}" class="btn btn-primary">Donate Food</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Notifications -->
+    <div class="card">
+        <div class="section-title">🔔 Notifications
+            {% if notifications %}<span class="notif-dot"></span>{% endif %}
+        </div>
+        {% if notifications %}
+            {% for n in notifications %}
+                <div class="notif-card">{{ n.message }}<br><small style="color:var(--gray)">{{ n.created_at|timesince }} ago</small></div>
+            {% endfor %}
+            <a href="{% url 'mark_notifications_read' %}" class="btn btn-outline btn-sm" style="margin-top:0.5rem;">Mark all read</a>
+        {% else %}
+            <div class="empty-state" style="padding:1.5rem 0;">
+                <div class="empty-icon" style="font-size:2rem;">✅</div>
+                <p>No new notifications</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

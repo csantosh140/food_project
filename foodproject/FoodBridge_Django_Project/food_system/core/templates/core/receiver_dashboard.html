@@ -1,0 +1,151 @@
+{% extends 'core/base.html' %}
+{% block title %}Receiver Dashboard – FoodBridge{% endblock %}
+{% block extra_css %}
+<style>
+.dashboard-header {
+    background: linear-gradient(135deg, #457b9d, #1d3557);
+    color: #fff;
+    border-radius: 20px;
+    padding: 2rem 2.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.dashboard-header h1 { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; }
+.dashboard-header p { opacity: 0.85; font-size: 0.9rem; margin-top: 0.25rem; }
+.food-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.food-item {
+    border: 1px solid #e8f0ec;
+    border-radius: 14px;
+    padding: 1.2rem;
+    transition: all 0.2s;
+}
+.food-item:hover { border-color: var(--green-light); box-shadow: 0 4px 12px rgba(45,106,79,0.10); }
+.food-item h4 { font-family: 'Syne', sans-serif; font-weight: 700; margin-bottom: 0.3rem; }
+.food-item .meta { font-size: 0.8rem; color: var(--gray); margin-bottom: 0.75rem; line-height: 1.6; }
+.food-item .actions { display: flex; gap: 0.5rem; }
+.notif-card { background: #edf4fb; border-left: 4px solid #457b9d; border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 0.5rem; font-size: 0.88rem; }
+.request-item { border: 1px solid #eef4f0; border-radius: 10px; padding: 0.9rem; margin-bottom: 0.6rem; }
+.request-item h5 { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.25rem; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <h1>🤲 Receiver Dashboard</h1>
+        <p>Welcome, {{ user.get_full_name|default:user.username }} — Find available food near you</p>
+    </div>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <a href="{% url 'browse_food' %}" class="btn" style="background:rgba(255,255,255,0.2);color:#fff;font-weight:700;">Browse All Food</a>
+        <a href="{% url 'create_food_request' %}" class="btn" style="background:rgba(255,255,255,0.35);color:#fff;font-weight:700;">+ Request Food</a>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="card-grid card-grid-4" style="margin-bottom:1.5rem;">
+    <div class="stat-card" style="border-left-color:#457b9d;">
+        <div class="stat-icon">🍱</div>
+        <div class="stat-num" style="color:#457b9d;">{{ stats.available_food }}</div>
+        <div class="stat-label">Food Available Now</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📝</div>
+        <div class="stat-num">{{ stats.my_requests }}</div>
+        <div class="stat-label">My Requests</div>
+    </div>
+    <div class="stat-card" style="border-left-color:#457b9d;">
+        <div class="stat-icon">✅</div>
+        <div class="stat-num" style="color:#457b9d;">{{ stats.fulfilled }}</div>
+        <div class="stat-label">Fulfilled</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🤝</div>
+        <div class="stat-num">{{ stats.received }}</div>
+        <div class="stat-label">Received</div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:3fr 2fr;gap:1.25rem;">
+    <div>
+        <!-- Available Food -->
+        <div class="card" style="margin-bottom:1.25rem;">
+            <div class="section-title">🍽️ Available Food Near You</div>
+            {% if available_food %}
+                <div class="food-grid">
+                {% for d in available_food %}
+                <div class="food-item">
+                    <h4>{{ d.title }}</h4>
+                    <div class="meta">
+                        🏪 {{ d.donor.profile.organization_name|default:d.donor.get_full_name }}<br>
+                        📍 {{ d.city }} &nbsp;|&nbsp; 👥 {{ d.serves_people }} people<br>
+                        🕐 Expires: {{ d.expiry_time|date:"d M, H:i" }}<br>
+                        🍴 {{ d.get_food_type_display }}
+                    </div>
+                    <div class="actions">
+                        <a href="{% url 'request_food' d.pk %}" class="btn btn-primary btn-sm">Request</a>
+                        <a href="{% url 'donation_detail' d.pk %}" class="btn btn-outline btn-sm">Details</a>
+                    </div>
+                </div>
+                {% endfor %}
+                </div>
+                <div style="text-align:right;margin-top:1rem;">
+                    <a href="{% url 'browse_food' %}" class="btn btn-outline btn-sm">Browse All →</a>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">🍽️</div>
+                    <p>No food available right now. Check back soon or submit a request!</p>
+                    <br><a href="{% url 'create_food_request' %}" class="btn btn-primary">Request Food</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- My Requests -->
+        <div class="card">
+            <div class="section-title">📋 My Food Requests</div>
+            {% if my_requests %}
+                {% for r in my_requests %}
+                <div class="request-item">
+                    <h5>For {{ r.people_count }} people — {{ r.city }}</h5>
+                    <div style="font-size:0.82rem;color:var(--gray);margin-bottom:0.4rem;">
+                        Needed by: {{ r.needed_by|date:"d M Y, H:i" }} | <span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span>
+                    </div>
+                    {% if r.notes %}<div style="font-size:0.82rem;">{{ r.notes }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state" style="padding:1.5rem 0;">
+                    <p>No requests yet. <a href="{% url 'create_food_request' %}" style="color:var(--green-light)">Submit one →</a></p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div>
+        <!-- Notifications -->
+        <div class="card" style="margin-bottom:1.25rem;">
+            <div class="section-title">🔔 Notifications</div>
+            {% if notifications %}
+                {% for n in notifications %}
+                    <div class="notif-card">{{ n.message }}<br><small style="color:var(--gray)">{{ n.created_at|timesince }} ago</small></div>
+                {% endfor %}
+                <a href="{% url 'mark_notifications_read' %}" class="btn btn-outline btn-sm" style="margin-top:0.5rem;">Mark all read</a>
+            {% else %}
+                <div class="empty-state" style="padding:1rem 0;"><p>No new notifications</p></div>
+            {% endif %}
+        </div>
+
+        <!-- Quick Tips -->
+        <div class="card" style="background:linear-gradient(135deg,#eef9f4,#e8f4fb);">
+            <div class="section-title">💡 Tips</div>
+            <ul style="font-size:0.85rem;color:var(--gray);line-height:2;padding-left:1.2rem;">
+                <li>Request food early before it expires</li>
+                <li>Add your location in profile for better matches</li>
+                <li>Leave feedback after receiving food</li>
+                <li>Submit requests for planned needs</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
